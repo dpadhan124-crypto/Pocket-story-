@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DPS Stories</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text: #f8fafc;
+            --text-dim: #94a3b8;
+            --border: #334155;
+            --nav-height: 60px;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0; padding: 0;
+            overflow-x: hidden;
+            line-height: 1.5;
+        }
+
+        /* --- Header & Search --- */
+        header {
+            padding: 10px 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--bg);
+            position: sticky;
+            top: 0; z-index: 1000;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .brand-logo { height: 35px; width: 35px; border-radius: 6px; object-fit: cover; }
+
+        .search-wrapper {
+            flex-grow: 1;
+            background: var(--card-bg);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            border: 1px solid var(--border);
+        }
+
+        .search-wrapper input {
+            background: transparent; border: none; color: white;
+            padding: 10px; width: 100%; outline: none; font-size: 16px;
+        }
+
+        .icon-btn { 
+            background: none; border: none; padding: 5px; 
+            cursor: pointer; display: flex; align-items: center; 
+        }
+
+        /* --- Genre Sections --- */
+        .section-wrap { margin-top: 20px; }
+        
+        .genre-header {
+            display: flex; justify-content: space-between;
+            padding: 0 15px 10px; align-items: center;
+        }
+        .genre-header h2 { 
+            font-size: 1.1rem; text-transform: capitalize; 
+            margin: 0; font-weight: 700; 
+        }
+        .view-all-btn { color: var(--primary); font-size: 0.85rem; font-weight: 600; cursor: pointer; }
+
+        .genre-row {
+            display: flex;
+            overflow-x: auto;
+            gap: 12px;
+            padding: 0 15px 20px;
+            scroll-snap-type: x mandatory;
+            scrollbar-width: none;
+        }
+        .genre-row::-webkit-scrollbar { display: none; }
+
+        /* --- Story Cards --- */
+        .story-card {
+            min-width: calc(45% - 12px); 
+            scroll-snap-align: start;
+            background: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            text-decoration: none;
+            color: inherit;
+            position: relative;
+        }
+
+        .ep-badge {
+            position: absolute; top: 8px; right: 8px;
+            background: rgba(0,0,0,0.7); color: white;
+            padding: 2px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: bold;
+            backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .card-img { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; background: #000; }
+        .card-body { padding: 10px; }
+        .card-body h3 { margin: 0; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* --- Full Screen Genre View --- */
+        #fullView {
+            position: fixed; inset: 0;
+            background: var(--bg); z-index: 2000; display: none;
+            flex-direction: column;
+        }
+        .full-grid {
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px; padding: 15px; 
+            overflow-y: auto; flex-grow: 1;
+            align-content: start;
+        }
+        .full-grid .story-card { min-width: 0; }
+
+        .load-more-big {
+            background: var(--primary); color: white; border: none;
+            padding: 16px; margin: 10px 15px 30px; border-radius: 12px; 
+            font-weight: bold; font-size: 1rem; cursor: pointer;
+        }
+
+        /* --- Detailed Story View --- */
+        #storyDrawer {
+            position: fixed; top: 100%; left: 0; width: 100%; height: 100%;
+            background: var(--bg); z-index: 4000; 
+            transition: 0.4s cubic-bezier(0, 0, 0.2, 1);
+            overflow-y: auto;
+        }
+        #storyDrawer.active { top: 0; }
+
+        .detail-header {
+            position: sticky; top: 0; padding: 15px;
+            display: flex; justify-content: flex-end; z-index: 10;
+        }
+
+        .close-circle {
+            background: rgba(0,0,0,0.5); border-radius: 50%;
+            width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;
+        }
+
+        /* --- Menu & Overlays --- */
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; z-index: 2500; }
+        .menu-drawer {
+            position: fixed; right: -280px; top: 0; width: 280px; height: 100%;
+            background: var(--card-bg); z-index: 3000; transition: 0.3s;
+            padding: 20px; border-left: 1px solid var(--border);
+        }
+        .menu-drawer.active { right: 0; }
+        .menu-link { padding: 15px 0; color: white; text-decoration: none; display: block; border-bottom: 1px solid var(--border); }
+        .filter-select {
+            width: 100%; padding: 12px; margin-top: 10px;
+            background: var(--bg); color: white; border: 1px solid var(--border); border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <img src="id.jpg" class="brand-logo" alt="L">
+    <div class="search-wrapper">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-dim)"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" id="mainSearch" placeholder="Search stories..." onkeyup="renderHome()">
+    </div>
+    <button class="icon-btn" onclick="toggleMenu()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
+    </button>
+</header>
+
+<div id="homeContent"></div>
+
+<div id="fullView">
+    <header>
+        <button class="icon-btn" onclick="closeFullView()">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        </button>
+        <h2 id="fullTitle" style="flex-grow:1; margin:0; font-size:1.1rem; text-transform:capitalize"></h2>
+    </header>
+    <div class="full-grid" id="fullGrid"></div>
+    <button id="loadMoreBtn" class="load-more-big" onclick="loadMoreItems()">Load More</button>
+</div>
+
+<div class="overlay" id="menuOverlay" onclick="toggleMenu()"></div>
+<div class="menu-drawer" id="menuDrawer">
+    <h3 class="menu-title">Explore</h3>
+    <select id="sortFilter" class="filter-select" onchange="renderHome()">
+        <option value="new">Newest Stories</option>
+        <option value="az">A to Z</option>
+        <option value="max">Most Episodes</option>
+    </select>
+    <div style="margin-top: 20px;">
+        <a href="#" class="menu-link">About Us</a>
+        <a href="dashboard.html" class="menu-link">Admin Portal</a>
+    </div>
+</div>
+
+<div id="storyDrawer">
+    <div class="detail-header">
+        <button class="icon-btn close-circle" onclick="closeDrawer()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+    </div>
+    <img id="dImg" style="width:100%; aspect-ratio:1/1; object-fit:cover;" onerror="this.src='id.jpg'">
+    <div style="padding:20px; padding-bottom: 50px;">
+        <h1 id="dTitle" style="margin:0; font-size: 1.8rem;"></h1>
+        <p id="dMeta" style="color:var(--primary); font-weight:bold; margin: 10px 0;"></p>
+        <hr style="border:0; border-top:1px solid var(--border); margin: 20px 0;">
+        <h3 style="font-size: 1rem; color: var(--text);">Description</h3>
+        <div id="dDesc" style="color:var(--text-dim); font-size:1rem; line-height:1.7;"></div>
+        <a href="#" id="dPL" style="display:block; text-align:center; padding:18px; background:var(--primary); color:white; border-radius:12px; text-decoration:none; font-weight:bold; margin-top:30px; font-size: 1.1rem;">Listen to Playlist</a>
+    </div>
+</div>
+
+<script src="data.js"></script>
+<script>
+    const BRAND_LOGO = "id.jpg";
+    let activeGenre = "";
+    let itemsShown = 20;
+
+    function getProcessedData() {
+        if (typeof S === 'undefined') return [];
+        let expanded = [];
+        S.forEach(item => {
+            const genres = item.g.split(',').map(g => g.trim().toLowerCase());
+            genres.forEach(g => expanded.push({...item, active_g: g}));
+        });
+        return expanded;
+    }
+
+    function sortLogic(data) {
+        const type = document.getElementById('sortFilter').value;
+        return [...data].sort((a, b) => {
+            if(type === 'az') return a.t.localeCompare(b.t);
+            if(type === 'max') return b.e - a.e;
+            return 0;
+        });
+    }
+
+    function createCard(i) {
+        return `
+            <div class="story-card" onclick="openStory('${i.t.replace(/'/g, "\\'")}')">
+                <div class="ep-badge">${i.e} Eps</div>
+                <img src="${i.img}" class="card-img" onerror="this.src='${BRAND_LOGO}'">
+                <div class="card-body"><h3>${i.t}</h3></div>
+            </div>
+        `;
+    }
+
+    function renderHome() {
+        const query = document.getElementById('mainSearch').value.toLowerCase();
+        const container = document.getElementById('homeContent');
+        container.innerHTML = '';
+        let data = sortLogic(getProcessedData());
+        const uniqueGenres = ["ongoing", ...new Set(data.map(i => i.active_g))];
+
+        uniqueGenres.forEach(genre => {
+            let filtered = data.filter(i => {
+                const searchMatch = i.t.toLowerCase().includes(query);
+                const genreMatch = (genre === "ongoing") ? true : i.active_g === genre;
+                return searchMatch && genreMatch;
+            });
+            if(filtered.length === 0) return;
+
+            const section = document.createElement('div');
+            section.className = 'section-wrap';
+            section.innerHTML = `
+                <div class="genre-header"><h2>${genre}</h2><span class="view-all-btn" onclick="openFullView('${genre}')">View All</span></div>
+                <div class="genre-row">${filtered.slice(0, 10).map(i => createCard(i)).join('')}</div>
+            `;
+            container.appendChild(section);
+        });
+    }
+
+    function openFullView(genre) {
+        activeGenre = genre;
+        itemsShown = 20;
+        document.getElementById('fullTitle').innerText = genre;
+        document.getElementById('fullView').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        renderFullGrid();
+    }
+
+    function renderFullGrid() {
+        let data = getProcessedData().filter(i => activeGenre === "ongoing" ? true : i.active_g === activeGenre);
+        data = sortLogic(data);
+        const grid = document.getElementById('fullGrid');
+        grid.innerHTML = data.slice(0, itemsShown).map(i => createCard(i)).join('');
+        document.getElementById('loadMoreBtn').style.display = itemsShown >= data.length ? 'none' : 'block';
+    }
+
+    function loadMoreItems() {
+        itemsShown += 20;
+        renderFullGrid();
+    }
+
+    function openStory(title) {
+        const item = S.find(x => x.t === title);
+        if(!item) return;
+        document.getElementById('dImg').src = item.img || BRAND_LOGO;
+        document.getElementById('dTitle').innerText = item.t;
+        document.getElementById('dMeta').innerText = `${item.g} • ${item.e} Episodes`;
+        document.getElementById('dDesc').innerText = item.d;
+        document.getElementById('dPL').href = item.pl;
+        document.getElementById('storyDrawer').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeDrawer() {
+        document.getElementById('storyDrawer').classList.remove('active');
+        if(document.getElementById('fullView').style.display !== 'flex') {
+            document.body.style.overflow = 'auto';
+        }
+    }
+
+    function toggleMenu() {
+        const d = document.getElementById('menuDrawer');
+        const o = document.getElementById('menuOverlay');
+        d.classList.toggle('active');
+        o.style.display = d.classList.contains('active') ? 'block' : 'none';
+    }
+
+    function closeFullView() { 
+        document.getElementById('fullView').style.display = 'none'; 
+        document.body.style.overflow = 'auto';
+    }
+
+    window.onload = renderHome;
+</script>
+</body>
+</html>
